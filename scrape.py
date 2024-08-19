@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 import requests
  
 # Fetch username and password from environment variables
-username = os.getenv("SCREENER_USERNAME")
-password = os.getenv("SCREENER_PASSWORD")
+username = os.getenv("USERNAME")
+password = os.getenv("PASSWORD")
  
 # Define MySQL connection parameters
 # mysql_user = os.getenv('MYSQL_USER', 'root')
