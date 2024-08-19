@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from sqlalchemy import create_engine
+# from sqlalchemy import create_engine
 from bs4 import BeautifulSoup
 import requests
  
