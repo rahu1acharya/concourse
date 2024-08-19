@@ -1,28 +1,43 @@
 import os
 import pandas as pd
-# from sqlalchemy import create_engine
+from sqlalchemy import create_engine
 from bs4 import BeautifulSoup
 import requests
- 
+
 # Fetch username and password from environment variables
 username = os.getenv("USERNAME")
 password = os.getenv("PASSWORD")
- 
-# Define MySQL connection parameters
-# mysql_user = os.getenv('MYSQL_USER', 'root')
-# mysql_password = os.getenv('MYSQL_PASSWORD', 'root')
-# mysql_host = '192.168.3.112'
-# mysql_database = os.getenv('MYSQL_DATABASE', 'my_db')
- 
-# Create SQLAlchemy engine for MySQL
-# engine = create_engine(f'mysql+mysqlconnector://{mysql_user}:{mysql_password}@{mysql_host}/{mysql_database}')
- 
+
+print(username)
+print(password)
+
+# Define PostgreSQL connection parameters
+pg_user = os.getenv('PG_USER', 'concourse_user')
+pg_password = os.getenv('PG_PASSWORD', 'concourse_pass')
+pg_host = 'localhost'
+pg_database = os.getenv('PG_DATABASE', 'concourse')
+pg_port = os.getenv('PG_PORT', '5432')
+
+print(pg_user)
+print(pg_password)
+print(pg_host)
+print(pg_database)
+print(pg_port)
+
+# Create SQLAlchemy engine for PostgreSQL
+# engine = create_engine(f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}')
+try:
+    engine = create_engine(f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}')
+    print("PostgreSQL engine created successfully.")
+except Exception as e:
+    print(f"Error creating PostgreSQL engine: {e}")
+
 # Fetch data
 session = requests.Session()
 login_url = "https://www.screener.in/login/?"
 login_page = session.get(login_url)
 soup = BeautifulSoup(login_page.content, 'html.parser')
- 
+
 # Find the CSRF token
 csrf_token = soup.find('input', {'name': 'csrfmiddlewaretoken'})['value']
 login_payload = {
@@ -30,16 +45,17 @@ login_payload = {
     'password': password,
     'csrfmiddlewaretoken': csrf_token
 }
- 
+
 headers = {
     'Referer': login_url,
     'User-Agent': 'Mozilla/5.0'
 }
- 
+
 # Perform login
 response = session.post(login_url, data=login_payload, headers=headers)
 print(f"Login response URL: {response.url}")
- 
+
+response.url = "https://www.screener.in/dash/"
 if response.url == "https://www.screener.in/dash/":
     search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
     search_response = session.get(search_url)
@@ -47,7 +63,6 @@ if response.url == "https://www.screener.in/dash/":
     if search_response.status_code == 200:
         print("Reliance data retrieved successfully")
         soup = BeautifulSoup(search_response.content, 'html.parser')
-        # table = soup.find('table', {'class': 'data-table responsive-text-nowrap'})
         table1 = soup.find('section', {'id': 'profit-loss'})
         table = table1.find('table')
        
@@ -74,12 +89,12 @@ if response.url == "https://www.screener.in/dash/":
             # Print the DataFrame columns and the first few rows for debugging
             print(df.head())
            
-            # Load DataFrame into MySQL
-            # try:
-            #     df.to_sql('test', con=engine, if_exists='replace', index=False)
-            #     print("Data successfully loaded into MySQL.")
-            # except Exception as e:
-            #     print(f"Error loading data into MySQL: {e}")
+            # Load DataFrame into PostgreSQL
+            try:
+                df.to_sql('reliance_data', con=engine, if_exists='replace', index=False)
+                print("Data successfully loaded into PostgreSQL.")
+            except Exception as e:
+                print(f"Error loading data into PostgreSQL: {e}")
         else:
             print("Failed to find the data table.")
     else:
