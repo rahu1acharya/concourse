@@ -78,7 +78,7 @@ if response.url == "https://www.screener.in/dash/":
             print(df.head())
            
             # Save DataFrame to CSV
-            csv_file_path = "reliance_data.csv"
+            csv_file_path = "reliance_data1.csv"
             df.to_csv(csv_file_path, index=False)
             print(f"Data successfully saved to CSV: {csv_file_path}")
            
