@@ -109,9 +109,9 @@ def main():
         if soup:
             df = parse_table(soup)
             if df is not None:
-                csv_file_path = "reliance_data1.csv"
+                csv_file_path = "reliance_data2.csv"
                 save_to_csv(df, csv_file_path)
-                load_to_postgres(df, engine, 'reliance_data1')
+                load_to_postgres(df, engine, 'reliance_data2')
     else:
         print("Login failed.")
 
