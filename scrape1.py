@@ -53,7 +53,7 @@ class RelianceSpider(scrapy.Spider):
         if not df.empty:
             df.columns = ['Narration'] + df.columns[1:].tolist()
         df = df.reset_index(drop=True)
-        csv_file_path = "reliance_data1.csv"
+        csv_file_path = "reliance_data2.csv"
         df.to_csv(csv_file_path, index=False)
         self.logger.info(f"Data successfully saved to CSV: {csv_file_path}")
         
