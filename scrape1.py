@@ -91,8 +91,8 @@ def load_to_postgres(df, engine, table_name):
 
 def main():
     """Main function to execute the script."""
-    username = os.getenv("USERNAME", 'rahul.acharya@godigitaltc.com')
-    password = os.getenv("PASSWORD", 'st0cksrahul@1')
+    username = os.getenv("USERNAME")
+    password = os.getenv("PASSWORD")
     print(username, password)
     
     # Create PostgreSQL engine
