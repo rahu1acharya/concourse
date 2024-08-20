@@ -84,7 +84,7 @@ if response.url == "https://www.screener.in/dash/":
            
             # Optionally load CSV to PostgreSQL using pandas if you want to automate it
             try:
-                df.to_sql('reliance_data', con=engine, if_exists='replace', index=False)
+                df.to_sql('reliance_data1', con=engine, if_exists='replace', index=False)
                 print("Data successfully loaded into PostgreSQL.")
             except Exception as e:
                 print(f"Error loading data into PostgreSQL: {e}")
