@@ -1,102 +1,120 @@
-import scrapy
-from scrapy.crawler import CrawlerProcess
+import os
 import pandas as pd
 from sqlalchemy import create_engine
-from scrapy.http import FormRequest
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+import time
 
-class RelianceSpider(scrapy.Spider):
-    name = 'reliance'
-    login_url = 'https://www.screener.in/login/?'
-    search_url = 'https://www.screener.in/company/RELIANCE/consolidated/'
-    
-    def start_requests(self):
-        username = self.settings.get('USERNAME')
-        password = self.settings.get('PASSWORD')
-        print(username, password)
-        # Start with the login request
-        yield scrapy.Request(self.login_url, callback=self.login, meta={'username': username, 'password': password})
-    
-    def login(self, response):
-        username = response.meta['username']
-        password = response.meta['password']
-        
-        csrf_token = response.css('input[name="csrfmiddlewaretoken"]::attr(value)').get()
-        yield FormRequest(
-            self.login_url,
-            formdata={
-                'username': username,
-                'password': password,
-                'csrfmiddlewaretoken': csrf_token
-            },
-            callback=self.after_login
-        )
-    
-    def after_login(self, response):
-        if response.url == "https://www.screener.in/dash/":
-            yield scrapy.Request(self.search_url, callback=self.parse_table)
-        else:
-            self.logger.error("Login failed.")
+def create_pg_engine():
+    """Create a SQLAlchemy engine for PostgreSQL."""
+    try:
+        pg_user = os.getenv('PG_USER', 'concourse_user')
+        pg_password = os.getenv('PG_PASSWORD', 'concourse_pass')
+        pg_host = '192.168.56.1'
+        pg_database = os.getenv('PG_DATABASE', 'concourse')
+        pg_port = os.getenv('PG_PORT', '5432')
 
-    def parse_table(self, response):
-        rows = response.css('section#profit-loss table tr')
-        headers = [header.css('::text').get().strip() or f'Column_{i}' for i, header in enumerate(rows[0].css('th'))]
+        engine = create_engine(f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}')
+        print("PostgreSQL engine created successfully.")
+        return engine
+    except Exception as e:
+        print(f"Error creating PostgreSQL engine: {e}")
+        return None
+
+def login_and_fetch_data(driver, username, password):
+    """Login and fetch data using Selenium."""
+    driver.get("https://www.screener.in/login/?")
+    
+    # Input the username and password
+    username_input = driver.find_element(By.ID, 'id_username')
+    password_input = driver.find_element(By.ID, 'id_password')
+    
+    username_input.send_keys(username)
+    password_input.send_keys(password)
+    
+    # Submit the login form
+    password_input.send_keys(Keys.RETURN)
+    
+    # Wait for login to complete and redirect
+    time.sleep(3)  # Adjust time based on the website speed
+    
+    # Check if login was successful
+    if driver.current_url == "https://www.screener.in/dash/":
+        print("Login successful.")
         
+        # Navigate to the data page
+        driver.get("https://www.screener.in/company/RELIANCE/consolidated/")
+        
+        # Wait for the page to load
+        time.sleep(3)
+        
+        # Find the table within the 'Profit & Loss' section
+        table = driver.find_element(By.CSS_SELECTOR, 'section#profit-loss table')
+        
+        # Extract headers
+        headers = [header.text.strip() for header in table.find_elements(By.CSS_SELECTOR, 'th')]
+        
+        # Extract rows of data
         data = []
+        rows = table.find_elements(By.CSS_SELECTOR, 'tr')
         for row in rows[1:]:
-            cols = [col.css('::text').get().strip() for col in row.css('td')]
+            cols = [col.text.strip() for col in row.find_elements(By.CSS_SELECTOR, 'td')]
             if len(cols) == len(headers):
                 data.append(cols)
             else:
-                self.logger.error(f"Row data length mismatch: {cols}")
-
+                print(f"Row data length mismatch: {cols}")
+        
+        # Create DataFrame
         df = pd.DataFrame(data, columns=headers)
         if not df.empty:
             df.columns = ['Narration'] + df.columns[1:].tolist()
-        df = df.reset_index(drop=True)
-        csv_file_path = "reliance_data2.csv"
-        df.to_csv(csv_file_path, index=False)
-        self.logger.info(f"Data successfully saved to CSV: {csv_file_path}")
-        
-        # Load to PostgreSQL
-        self.load_to_postgres(df, 'reliance_data1')
-    
-    def load_to_postgres(self, df, table_name):
-        engine = self.create_pg_engine()
-        if not engine:
-            return
-        
-        try:
-            df.to_sql(table_name, con=engine, if_exists='replace', index=False)
-            self.logger.info("Data successfully loaded into PostgreSQL.")
-        except Exception as e:
-            self.logger.error(f"Error loading data into PostgreSQL: {e}")
-    
-    def create_pg_engine(self):
-        try:
-            pg_user = self.settings.get('PG_USER', 'concourse_user')
-            pg_password = self.settings.get('PG_PASSWORD', 'concourse_pass')
-            pg_host = '192.168.56.1'
-            pg_database = self.settings.get('PG_DATABASE', 'concourse')
-            pg_port = self.settings.get('PG_PORT', '5432')
+        return df
+    else:
+        print("Login failed.")
+        return None
 
-            engine = create_engine(f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}')
-            self.logger.info("PostgreSQL engine created successfully.")
-            return engine
-        except Exception as e:
-            self.logger.error(f"Error creating PostgreSQL engine: {e}")
-            return None
+def save_to_csv(df, file_path):
+    """Save DataFrame to CSV file."""
+    df.to_csv(file_path, index=False)
+    print(f"Data successfully saved to CSV: {file_path}")
+
+def load_to_postgres(df, engine, table_name):
+    """Load DataFrame into PostgreSQL."""
+    try:
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        print("Data successfully loaded into PostgreSQL.")
+    except Exception as e:
+        print(f"Error loading data into PostgreSQL: {e}")
+
+def main():
+    """Main function to execute the script."""
+    username = 'rahul.acharya@godigitaltc.com'
+    password = 'st0cksrahul@1'
+    print(username, password)
+    
+    # Create PostgreSQL engine
+    engine = create_pg_engine()
+    if not engine:
+        return
+    
+    # Setup Selenium WebDriver
+    options = Options()
+    options.headless = True  # Set headless if you don't need a browser window
+    driver = webdriver.Chrome(options=options)
+    
+    try:
+        # Login and fetch data
+        df = login_and_fetch_data(driver, username, password)
+        
+        if df is not None:
+            csv_file_path = "reliance_data10.csv"
+            save_to_csv(df, csv_file_path)
+            load_to_postgres(df, engine, 'reliance_data10')
+    finally:
+        driver.quit()
 
 if __name__ == "__main__":
-    settings = {
-        'USERNAME':'rahul.acharya@godigitaltc.com',
-        'PASSWORD':'st0cksrahul@1',
-        'PG_USER': 'concourse_user',
-        'PG_PASSWORD': 'concourse_pass',
-        'PG_DATABASE': 'concourse',
-        'PG_PORT': '5432',
-        'LOG_LEVEL': 'ERROR',
-    }
-
-    process = CrawlerProcess(settings)
-    process.crawl(RelianceSpider)
-    process.start()
+    main()
