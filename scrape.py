@@ -14,7 +14,7 @@ print(password)
 # Define PostgreSQL connection parameters
 pg_user = os.getenv('PG_USER', 'concourse_user')
 pg_password = os.getenv('PG_PASSWORD', 'concourse_pass')
-pg_host = 'concourse-db'
+pg_host = '192.168.56.1'
 pg_database = os.getenv('PG_DATABASE', 'concourse')
 pg_port = os.getenv('PG_PORT', '5432')
 
