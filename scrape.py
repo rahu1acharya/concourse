@@ -8,9 +8,6 @@ import requests
 username = os.getenv("USERNAME")
 password = os.getenv("PASSWORD")
 
-print(username)
-print(password)
-
 # Define PostgreSQL connection parameters
 pg_user = os.getenv('PG_USER', 'concourse_user')
 pg_password = os.getenv('PG_PASSWORD', 'concourse_pass')
@@ -18,14 +15,7 @@ pg_host = '192.168.56.1'
 pg_database = os.getenv('PG_DATABASE', 'concourse')
 pg_port = os.getenv('PG_PORT', '5432')
 
-print(pg_user)
-print(pg_password)
-print(pg_host)
-print(pg_database)
-print(pg_port)
-
 # Create SQLAlchemy engine for PostgreSQL
-# engine = create_engine(f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}')
 try:
     engine = create_engine(f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}')
     print("PostgreSQL engine created successfully.")
@@ -53,9 +43,7 @@ headers = {
 
 # Perform login
 response = session.post(login_url, data=login_payload, headers=headers)
-print(f"Login response URL: {response.url}")
 
-response.url = "https://www.screener.in/dash/"
 if response.url == "https://www.screener.in/dash/":
     search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
     search_response = session.get(search_url)
@@ -89,7 +77,12 @@ if response.url == "https://www.screener.in/dash/":
             # Print the DataFrame columns and the first few rows for debugging
             print(df.head())
            
-            # Load DataFrame into PostgreSQL
+            # Save DataFrame to CSV
+            csv_file_path = "reliance_data.csv"
+            df.to_csv(csv_file_path, index=False)
+            print(f"Data successfully saved to CSV: {csv_file_path}")
+           
+            # Optionally load CSV to PostgreSQL using pandas if you want to automate it
             try:
                 df.to_sql('reliance_data', con=engine, if_exists='replace', index=False)
                 print("Data successfully loaded into PostgreSQL.")
