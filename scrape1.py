@@ -91,8 +91,8 @@ def load_to_postgres(df, engine, table_name):
 
 def main():
     """Main function to execute the script."""
-    username = 'rahul.acharya@godigitaltc.com'
-    password = 'st0cksrahul@1'
+    username = os.getenv("USERNAME", 'rahul.acharya@godigitaltc.com')
+    password = os.getenv("PASSWORD", 'st0cksrahul@1')
     print(username, password)
     
     # Create PostgreSQL engine
@@ -103,6 +103,11 @@ def main():
     # Setup Selenium WebDriver
     options = Options()
     options.headless = True  # Set headless if you don't need a browser window
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--remote-debugging-port=9222')  # Optional for debugging
+
     driver = webdriver.Chrome(options=options)
     
     try:
@@ -110,9 +115,9 @@ def main():
         df = login_and_fetch_data(driver, username, password)
         
         if df is not None:
-            csv_file_path = "reliance_data10.csv"
+            csv_file_path = "reliance_data1.csv"
             save_to_csv(df, csv_file_path)
-            load_to_postgres(df, engine, 'reliance_data10')
+            load_to_postgres(df, engine, 'reliance_data1')
     finally:
         driver.quit()
 
