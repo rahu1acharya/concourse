@@ -88,13 +88,11 @@ class RelianceSpider(scrapy.Spider):
 
 if __name__ == "__main__":
     settings = {
-        'USERNAME': 'your_username',
-        'PASSWORD': 'your_password',
         'PG_USER': 'concourse_user',
         'PG_PASSWORD': 'concourse_pass',
         'PG_DATABASE': 'concourse',
         'PG_PORT': '5432',
-        'LOG_LEVEL': 'INFO',
+        'LOG_LEVEL': 'ERROR',
     }
 
     process = CrawlerProcess(settings)
