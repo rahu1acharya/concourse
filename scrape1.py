@@ -116,9 +116,9 @@ def main():
         df = login_and_fetch_data(driver, username, password)
         
         if df is not None:
-            csv_file_path = "reliance_data1.csv"
+            csv_file_path = "reliance_data10.csv"
             save_to_csv(df, csv_file_path)
-            load_to_postgres(df, engine, 'reliance_data1')
+            load_to_postgres(df, engine, 'reliance_data10')
     finally:
         driver.quit()
 
