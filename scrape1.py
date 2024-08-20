@@ -88,6 +88,8 @@ class RelianceSpider(scrapy.Spider):
 
 if __name__ == "__main__":
     settings = {
+        'USERNAME':'rahul.acharya@godigitaltc.com',
+        'PASSWORD':'st0cksrahul@1',
         'PG_USER': 'concourse_user',
         'PG_PASSWORD': 'concourse_pass',
         'PG_DATABASE': 'concourse',
