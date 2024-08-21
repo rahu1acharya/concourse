@@ -50,54 +50,42 @@ def fetch_data(session, search_url):
         return None
 
 def parse_table(soup):
-    """Parse the table from BeautifulSoup object and return DataFrame in the desired format."""
+    """Parse the table from BeautifulSoup object and return DataFrame."""
     table = soup.find('section', {'id': 'profit-loss'}).find('table')
     if table:
-        # Extract headers
-        headers = [th.text.strip() for th in table.find_all('th')]
-
-        # Initialize data containers
-        data = {header: [] for header in headers[1:]}  # Excluding 'Narration'
-
-        # Process rows
+        headers = [th.text.strip() or f'Column_{i}' for i, th in enumerate(table.find_all('th'))]
         rows = table.find_all('tr')
-        for row in rows[1:]:  # Skip the header row
+        row_data = []
+
+        for row in rows[1:]:
             cols = [col.text.strip() for col in row.find_all('td')]
-            if cols:
-                narration = cols[0]
-                values = cols[1:]
+            if len(cols) == len(headers):
+                row_data.append(cols)
+            else:
+                print(f"Row data length mismatch: {cols}")
 
-                # Append data to the corresponding column
-                for i, value in enumerate(values):
-                    data[headers[i + 1]].append(value)
-
-        # Convert to DataFrame
-        df_data = {'Date': headers[1:]}  # Date headers
-        for key, values in data.items():
-            df_data[key] = values
-
-        df = pd.DataFrame(df_data)
-        df = df.rename(columns={'Date': 'Date'})
-        
-        # Convert columns to numeric and remove symbols
-        for col in df.columns[1:]:
-            df[col] = df[col].str.replace(r'[%,\'\"]', '', regex=True)  # Remove %, ', and "
-            df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric
-
-        df.fillna('', inplace=True)  # Fill NaN values with empty strings
+        df = pd.DataFrame(row_data, columns=headers)
+        if not df.empty:
+            df.columns = ['Narration'] + df.columns[1:].tolist()
         df = df.reset_index(drop=True)
-
         return df
     else:
         print("Failed to find the data table.")
         return None
 
-
 def save_to_csv(df, file_path):
-    """Save DataFrame to CSV file."""
-    print(df.head())
-    df.to_csv(file_path, index=False)
-    print(f"Data successfully saved to CSV: {file_path}")
+    """Save transposed DataFrame to CSV file."""
+    if df is not None:
+        df_transposed = df.set_index('Narration').T  # Transpose the DataFrame
+        df_transposed.reset_index(inplace=True)
+        df_transposed.rename(columns={'index': 'Date'}, inplace=True)  # Rename index column to 'Date'
+        
+        print(df_transposed.head())
+        df_transposed.to_csv(file_path, index=False)
+        print(f"Data successfully saved to CSV: {file_path}")
+    else:
+        print("No data to save.")
+
 
 def load_to_postgres(df, engine, table_name):
     """Load DataFrame into PostgreSQL."""
@@ -130,9 +118,9 @@ def main():
         if soup:
             df = parse_table(soup)
             if df is not None:
-                csv_file_path = "reliance_data_transposed.csv"
+                csv_file_path = "reliance_data2.csv"
                 save_to_csv(df, csv_file_path)
-                load_to_postgres(df, engine, 'reliance_data_transposed')
+                load_to_postgres(df, engine, 'reliance_data2')
     else:
         print("Login failed.")
 
