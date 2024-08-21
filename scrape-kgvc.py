@@ -91,7 +91,7 @@ def save_to_csv(df, file_path):
         df_transposed = df_transposed.fillna(0)
 
         # Clean column names: lowercase, replace spaces and symbols with underscores
-        df_transposed.columns = [col.lower().replace(' ', '_').replace('+', '_plus').replace('%', '_percent') for col in df_transposed.columns]
+        df_transposed.columns = [col.lower().replace(' ', '_').replace('+', '').replace('%', '_percent') for col in df_transposed.columns]
 
         print(df_transposed.head())
         df_transposed.to_csv(file_path, index=False)
