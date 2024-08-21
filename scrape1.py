@@ -44,6 +44,7 @@ def login_and_fetch_data(driver, username, password):
     # Check if login was successful
     if driver.current_url == "https://www.screener.in/dash/":
         print("Login successful.")
+        print(1)
         
         # Navigate to the data page
         driver.get("https://www.screener.in/company/RELIANCE/consolidated/")
