@@ -83,24 +83,9 @@ def save_to_csv(df, file_path):
         df_transposed.reset_index(inplace=True)
         df_transposed.rename(columns={'index': 'Date'}, inplace=True)
         
-        # Columns that need special handling
-        columns_with_plus = ['Sales +', 'Expenses +', 'Other Income +', 'Net Profit +']
-        percentage_columns = ['OPM %', 'Tax %', 'Dividend Payout %']
-        
-        # Remove '+' sign from relevant columns
-        for col in columns_with_plus:
-            if col in df_transposed.columns:
-                df_transposed[col] = df_transposed[col].replace({'\+': ''}, regex=True)
-        
-        # Remove '%' sign and convert percentage columns to numeric
-        for col in percentage_columns:
-            if col in df_transposed.columns:
-                df_transposed[col] = df_transposed[col].replace({'%': ''}, regex=True)
-                df_transposed[col] = pd.to_numeric(df_transposed[col].str.replace(',', ''), errors='coerce')
-        
-        # Convert all other columns (except 'Date') to numeric
+        # Convert all columns (except 'Date') to numeric
         for col in df_transposed.columns:
-            if col != 'Date' and col not in percentage_columns:
+            if col != 'Date':
                 df_transposed[col] = pd.to_numeric(df_transposed[col].str.replace(',', ''), errors='coerce')
         
         # Fill NaN values with 0
@@ -122,22 +107,9 @@ def load_to_postgres(df, engine, table_name):
     """Load DataFrame into PostgreSQL."""
     try:
         if df is not None:
-            # Remove '+' sign from relevant columns
-            columns_with_plus = ['Sales +', 'Expenses +', 'Other Income +', 'Net Profit +']
-            for col in columns_with_plus:
-                if col in df.columns:
-                    df[col] = df[col].replace({'\+': ''}, regex=True)
-
-            # Remove '%' sign and convert percentage columns to numeric
-            percentage_columns = ['OPM %', 'Tax %', 'Dividend Payout %']
-            for col in percentage_columns:
-                if col in df.columns:
-                    df[col] = df[col].replace({'%': ''}, regex=True)
-                    df[col] = pd.to_numeric(df[col].str.replace(',', ''), errors='coerce')
-            
-            # Convert all other columns (except 'Date') to numeric
+            # Convert all columns (except 'Date') to numeric
             for col in df.columns:
-                if col != 'Date' and col not in percentage_columns:
+                if col != 'Date':
                     df[col] = pd.to_numeric(df[col].str.replace(',', ''), errors='coerce')
             
             # Load to PostgreSQL
