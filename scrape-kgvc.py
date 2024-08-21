@@ -102,7 +102,10 @@ def save_to_csv(df, file_path):
         for col in df_transposed.columns:
             if col != 'Date' and col not in percentage_columns:
                 df_transposed[col] = pd.to_numeric(df_transposed[col].str.replace(',', ''), errors='coerce')
+        
+        # Fill NaN values with 0
         df_transposed = df_transposed.fillna(0)
+        
         # Display the first few rows for verification
         print(df_transposed.head())
         
@@ -145,8 +148,6 @@ def load_to_postgres(df, engine, table_name):
     except Exception as e:
         print(f"Error loading data into PostgreSQL: {e}")
 
-
-
 def main():
     """Main function to execute the script."""
     username = os.getenv("USERNAME")
@@ -176,7 +177,6 @@ def main():
                     load_to_postgres(df_transposed, engine, 'reliance_data2')
     else:
         print("Login failed.")
-
 
 if __name__ == "__main__":
     main()
