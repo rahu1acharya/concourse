@@ -65,20 +65,23 @@ def parse_table(soup):
                 print(f"Row data length mismatch: {cols}")
 
         df = pd.DataFrame(row_data, columns=headers)
-        if not df.empty:
-            df.columns = ['Narration'] + df.columns[1:].tolist()
 
-            # Convert columns except 'Narration' to numeric and remove symbols
-            for col in df.columns[1:]:
-                df[col] = df[col].str.replace(r'[%,\'\"]', '', regex=True)  # Remove %, ', and "
-                df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric, setting invalid parsing as NaN
-            df.fillna(0, inplace=True)
+        # Pivot the table: Make `Narration` values the columns, and the `Date` column will hold year data
+        df = df.set_index('Narration').T  # Transpose the dataframe
+        df = df.reset_index()  # Reset index to bring the transposed column back
+        df.rename(columns={'index': 'Date'}, inplace=True)  # Rename the index column to 'Date'
+
+        # Convert columns to numeric where necessary
+        for col in df.columns[1:]:
+            df[col] = df[col].str.replace(r'[%,\'\"]', '', regex=True)  # Remove %, ', and "
+            df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric
+
+        df.fillna(0, inplace=True)
         df = df.reset_index(drop=True)
         return df
     else:
         print("Failed to find the data table.")
         return None
-
 
 def save_to_csv(df, file_path):
     """Save DataFrame to CSV file."""
