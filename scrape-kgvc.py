@@ -99,6 +99,7 @@ def save_to_csv(df, file_path):
 def load_to_postgres(df_transposed, engine, table_name):
     """Load transposed DataFrame into PostgreSQL."""
     try:
+        df_transposed = df_transposed.fillna(0)
         df_transposed.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data successfully loaded into PostgreSQL.")
     except Exception as e:
