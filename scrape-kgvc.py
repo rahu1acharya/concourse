@@ -67,6 +67,7 @@ def parse_table(soup):
         df = pd.DataFrame(row_data, columns=headers)
         if not df.empty:
             df.columns = ['Narration'] + df.columns[1:].tolist()
+            df.columns = df.columns.str.replace(' ', '_').str.replace('%', 'pct').str.replace('+', '_plus')
         df = df.reset_index(drop=True)
         return df
     else:
@@ -84,7 +85,7 @@ def save_to_csv(df, file_path):
         for col in df_transposed.columns:
             if col != 'Date':
                 # Remove commas and percentage symbols, then convert to numeric
-                df_transposed[col] = df_transposed[col].replace({',': '', '%': ''}, regex=True)
+                df_transposed[col] = df_transposed[col].replace({',': '', 'pct': ''}, regex=True)
                 df_transposed[col] = pd.to_numeric(df_transposed[col], errors='coerce')
         
         print(df_transposed.head())
