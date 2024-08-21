@@ -116,12 +116,35 @@ def save_to_csv(df, file_path):
         return None
 
 def load_to_postgres(df, engine, table_name):
-    """Load transposed DataFrame into PostgreSQL."""
+    """Load DataFrame into PostgreSQL."""
     try:
-        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
-        print("Data successfully loaded into PostgreSQL.")
+        if df is not None:
+            # Remove '+' sign from relevant columns
+            columns_with_plus = ['Sales +', 'Expenses +', 'Other Income +', 'Net Profit +']
+            for col in columns_with_plus:
+                if col in df.columns:
+                    df[col] = df[col].replace({'\+': ''}, regex=True)
+
+            # Remove '%' sign and convert percentage columns to numeric
+            percentage_columns = ['OPM %', 'Tax %', 'Dividend Payout %']
+            for col in percentage_columns:
+                if col in df.columns:
+                    df[col] = df[col].replace({'%': ''}, regex=True)
+                    df[col] = pd.to_numeric(df[col].str.replace(',', ''), errors='coerce')
+            
+            # Convert all other columns (except 'Date') to numeric
+            for col in df.columns:
+                if col != 'Date' and col not in percentage_columns:
+                    df[col] = pd.to_numeric(df[col].str.replace(',', ''), errors='coerce')
+            
+            # Load to PostgreSQL
+            df.to_sql(table_name, con=engine, if_exists='replace', index=False)
+            print("Data successfully loaded into PostgreSQL.")
+        else:
+            print("No data to load into PostgreSQL.")
     except Exception as e:
         print(f"Error loading data into PostgreSQL: {e}")
+
 
 
 def main():
