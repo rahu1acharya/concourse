@@ -88,6 +88,7 @@ def save_to_csv(df, file_path):
                 df_transposed[col] = pd.to_numeric(df_transposed[col], errors='coerce')
         
         print(df_transposed.head())
+        df_transposed = df_transposed.fillna(0)
         df_transposed.to_csv(file_path, index=False)
         print(f"Data successfully saved to CSV: {file_path}")
         return df_transposed  # Return the transposed DataFrame for further processing
