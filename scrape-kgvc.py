@@ -53,31 +53,45 @@ def parse_table(soup):
     """Parse the table from BeautifulSoup object and return DataFrame."""
     table = soup.find('section', {'id': 'profit-loss'}).find('table')
     if table:
-        headers = [th.text.strip() or f'Column_{i}' for i, th in enumerate(table.find_all('th'))]
+        # Define the column headers as required
+        column_headers = [
+            'Date', 'Sales', 'Expenses', 'Operating Profit', 'OPM %', 'Other Income', 
+            'Interest', 'Depreciation', 'Profit before tax', 'Tax %', 'Net Profit', 
+            'EPS in Rs', 'Dividend Payout %'
+        ]
+        
+        # Extract the table rows
         rows = table.find_all('tr')
         row_data = []
 
-        for row in rows[1:]:
-            cols = [col.text.strip() for col in row.find_all('td')]
-            if len(cols) == len(headers):
+        for row in rows:
+            cols = [col.text.strip() for col in row.find_all(['th', 'td'])]
+            if cols:
                 row_data.append(cols)
-            else:
-                print(f"Row data length mismatch: {cols}")
 
-        df = pd.DataFrame(row_data, columns=headers)
+        # First row contains years (Mar 2013, Mar 2014, ..., TTM) -> should go under 'Date'
+        dates = row_data[0][1:]
+        row_data = row_data[1:]  # Skip the first row (headers)
 
-        # Pivot the table: Make `Narration` values the columns, and the `Date` column will hold year data
-        df = df.set_index('Narration').T  # Transpose the dataframe
-        df = df.reset_index()  # Reset index to bring the transposed column back
-        df.rename(columns={'index': 'Date'}, inplace=True)  # Rename the index column to 'Date'
+        # Create DataFrame with proper column mapping
+        data = {}
+        for i, header in enumerate(column_headers[1:]):  # Skip 'Date' in headers for now
+            data[header] = [row[i + 1] for row in row_data]
 
-        # Convert columns to numeric where necessary
-        for col in df.columns[1:]:
+        # Add 'Date' column
+        data['Date'] = dates
+
+        # Convert the data into a DataFrame
+        df = pd.DataFrame(data, columns=column_headers)
+
+        # Clean up numeric columns
+        for col in column_headers[1:]:  # Skip 'Date' column
             df[col] = df[col].str.replace(r'[%,\'\"]', '', regex=True)  # Remove %, ', and "
             df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric
 
-        df.fillna(0, inplace=True)
+        df.fillna(0, inplace=True)  # Fill any remaining NaN with 0
         df = df.reset_index(drop=True)
+
         return df
     else:
         print("Failed to find the data table.")
