@@ -90,7 +90,7 @@ def save_to_csv(df, file_path):
 def load_to_postgres(df, engine, table_name):
     """Load DataFrame into PostgreSQL."""
     try:
-        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        df_transposed.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data successfully loaded into PostgreSQL.")
     except Exception as e:
         print(f"Error loading data into PostgreSQL: {e}")
