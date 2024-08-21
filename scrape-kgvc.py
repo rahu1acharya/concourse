@@ -87,8 +87,13 @@ def save_to_csv(df, file_path):
                 df_transposed[col] = df_transposed[col].replace({',': '', '%': ''}, regex=True)
                 df_transposed[col] = pd.to_numeric(df_transposed[col], errors='coerce')
 
-        print(df_transposed.head())
+        # Fill NaN values
         df_transposed = df_transposed.fillna(0)
+
+        # Clean column names: lowercase, replace spaces and symbols with underscores
+        df_transposed.columns = [col.lower().replace(' ', '_').replace('+', '_plus').replace('%', '_percent') for col in df_transposed.columns]
+
+        print(df_transposed.head())
         df_transposed.to_csv(file_path, index=False)
         print(f"Data successfully saved to CSV: {file_path}")
         return df_transposed  # Return the transposed DataFrame for further processing
