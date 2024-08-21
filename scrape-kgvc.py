@@ -54,40 +54,43 @@ def parse_table(soup):
     table = soup.find('section', {'id': 'profit-loss'}).find('table')
     if table:
         # Extract headers
-        headers = [th.text.strip() for th in table.find_all('th')]
+        headers = [th.text.strip() for th in table.find_all('th') if th.text.strip()]
+
+        # Process rows
         rows = table.find_all('tr')
         data = {header: [] for header in headers}
-        
-        # Process each row
+
         for row in rows:
             cols = [col.text.strip() for col in row.find_all('td')]
             if cols:
-                for i, header in enumerate(headers):
-                    if i < len(cols):
-                        data[header].append(cols[i])
-        
+                # Assuming the first column is the label and the rest are the values
+                label = cols[0]
+                values = cols[1:]
+
+                if len(values) == len(headers) - 1:
+                    data[label] = values
+
         # Create DataFrame with transposed data
-        # Extract dates
-        dates = data.pop('Narration')
-        df_data = {header: data[header] for header in headers if header != 'Narration'}
-        df_data['Date'] = dates
-        
+        # Extract the dates
+        dates = headers[1:]
+        metrics = list(data.keys())
+
+        # Create the DataFrame
+        df_data = {'Date': dates}
+        for metric in metrics:
+            df_data[metric] = data[metric]
+
         df = pd.DataFrame(df_data)
-        
-        # Ensure 'Date' is the first column
-        cols = ['Date'] + [col for col in df.columns if col != 'Date']
-        df = df[cols]
-        
+
         # Convert columns except 'Date' to numeric and remove symbols
-        for col in cols[1:]:
+        for col in df.columns[1:]:
             df[col] = df[col].str.replace(r'[%,\'\"]', '', regex=True)  # Remove %, ', and "
             df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric
 
         # Fill NaN values with appropriate default
         df.fillna(0, inplace=True)
-        
+
         df = df.reset_index(drop=True)
-        
         return df
     else:
         print("Failed to find the data table.")
