@@ -53,45 +53,41 @@ def parse_table(soup):
     """Parse the table from BeautifulSoup object and return DataFrame."""
     table = soup.find('section', {'id': 'profit-loss'}).find('table')
     if table:
-        # Define the column headers as required
-        column_headers = [
-            'Date', 'Sales', 'Expenses', 'Operating Profit', 'OPM %', 'Other Income', 
-            'Interest', 'Depreciation', 'Profit before tax', 'Tax %', 'Net Profit', 
-            'EPS in Rs', 'Dividend Payout %'
-        ]
-        
-        # Extract the table rows
+        # Extract headers
+        headers = [th.text.strip() for th in table.find_all('th')]
         rows = table.find_all('tr')
-        row_data = []
-
+        data = {header: [] for header in headers}
+        
+        # Process each row
         for row in rows:
-            cols = [col.text.strip() for col in row.find_all(['th', 'td'])]
+            cols = [col.text.strip() for col in row.find_all('td')]
             if cols:
-                row_data.append(cols)
-
-        # First row contains years (Mar 2013, Mar 2014, ..., TTM) -> should go under 'Date'
-        dates = row_data[0][1:]
-        row_data = row_data[1:]  # Skip the first row (headers)
-
-        # Create DataFrame with proper column mapping
-        data = {}
-        for i, header in enumerate(column_headers[1:]):  # Skip 'Date' in headers for now
-            data[header] = [row[i + 1] for row in row_data]
-
-        # Add 'Date' column
-        data['Date'] = dates
-
-        # Convert the data into a DataFrame
-        df = pd.DataFrame(data, columns=column_headers)
-
-        # Clean up numeric columns
-        for col in column_headers[1:]:  # Skip 'Date' column
+                for i, header in enumerate(headers):
+                    if i < len(cols):
+                        data[header].append(cols[i])
+        
+        # Create DataFrame with transposed data
+        # Extract dates
+        dates = data.pop('Narration')
+        df_data = {header: data[header] for header in headers if header != 'Narration'}
+        df_data['Date'] = dates
+        
+        df = pd.DataFrame(df_data)
+        
+        # Ensure 'Date' is the first column
+        cols = ['Date'] + [col for col in df.columns if col != 'Date']
+        df = df[cols]
+        
+        # Convert columns except 'Date' to numeric and remove symbols
+        for col in cols[1:]:
             df[col] = df[col].str.replace(r'[%,\'\"]', '', regex=True)  # Remove %, ', and "
             df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric
 
-        df.fillna(0, inplace=True)  # Fill any remaining NaN with 0
+        # Fill NaN values with appropriate default
+        df.fillna(0, inplace=True)
+        
         df = df.reset_index(drop=True)
-
+        
         return df
     else:
         print("Failed to find the data table.")
@@ -134,9 +130,9 @@ def main():
         if soup:
             df = parse_table(soup)
             if df is not None:
-                csv_file_path = "reliance_data2.csv"
+                csv_file_path = "reliance_data_transposed.csv"
                 save_to_csv(df, csv_file_path)
-                load_to_postgres(df, engine, 'reliance_data2')
+                load_to_postgres(df, engine, 'reliance_data_transposed')
     else:
         print("Login failed.")
 
