@@ -79,11 +79,6 @@ def save_to_csv(df, file_path):
         df_transposed = df.set_index('Narration').T  # Transpose the DataFrame
         df_transposed.reset_index(inplace=True)
         df_transposed.rename(columns={'index': 'Date'}, inplace=True)  # Rename index column to 'Date'
-
-        # Convert columns to numeric (except 'Date')
-        for col in df_transposed.columns:
-            if col != 'Date':
-                df_transposed[col] = pd.to_numeric(df_transposed[col], errors='coerce')
         
         print(df_transposed.head())
         df_transposed.to_csv(file_path, index=False)
