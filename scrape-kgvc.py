@@ -74,7 +74,7 @@ def parse_table(soup):
         return None
 
 def save_to_csv(df, file_path):
-    """Save transposed DataFrame to CSV file."""
+    """Save transposed DataFrame to CSV file and return it."""
     if df is not None:
         df_transposed = df.set_index('Narration').T  # Transpose the DataFrame
         df_transposed.reset_index(inplace=True)
@@ -83,17 +83,22 @@ def save_to_csv(df, file_path):
         print(df_transposed.head())
         df_transposed.to_csv(file_path, index=False)
         print(f"Data successfully saved to CSV: {file_path}")
+        
+        return df_transposed  # Return the transposed DataFrame
     else:
         print("No data to save.")
+        return None
+
 
 
 def load_to_postgres(df, engine, table_name):
-    """Load DataFrame into PostgreSQL."""
+    """Load transposed DataFrame into PostgreSQL."""
     try:
-        df_transposed.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data successfully loaded into PostgreSQL.")
     except Exception as e:
         print(f"Error loading data into PostgreSQL: {e}")
+
 
 def main():
     """Main function to execute the script."""
@@ -119,10 +124,12 @@ def main():
             df = parse_table(soup)
             if df is not None:
                 csv_file_path = "reliance_data2.csv"
-                save_to_csv(df, csv_file_path)
-                load_to_postgres(df, engine, 'reliance_data2')
+                df_transposed = save_to_csv(df, csv_file_path)  # Get the transposed DataFrame
+                if df_transposed is not None:
+                    load_to_postgres(df_transposed, engine, 'reliance_data2')
     else:
         print("Login failed.")
+
 
 if __name__ == "__main__":
     main()
