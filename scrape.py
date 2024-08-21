@@ -75,6 +75,7 @@ def parse_table(soup):
 
 def save_to_csv(df, file_path):
     """Save DataFrame to CSV file."""
+    print(df.head())
     df.to_csv(file_path, index=False)
     print(f"Data successfully saved to CSV: {file_path}")
 
