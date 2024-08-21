@@ -74,49 +74,25 @@ def parse_table(soup):
         return None
 
 def save_to_csv(df, file_path):
-    """Save transposed DataFrame to CSV file and return it."""
+    """Save transposed DataFrame to CSV file."""
     if df is not None:
-        # Transpose the DataFrame
-        df_transposed = df.set_index('Narration').T
-        
-        # Reset index and rename the index column to 'Date'
+        df_transposed = df.set_index('Narration').T  # Transpose the DataFrame
         df_transposed.reset_index(inplace=True)
-        df_transposed.rename(columns={'index': 'Date'}, inplace=True)
+        df_transposed.rename(columns={'index': 'Date'}, inplace=True)  # Rename index column to 'Date'
         
-        # Convert all columns (except 'Date') to numeric
-        for col in df_transposed.columns:
-            if col != 'Date':
-                df_transposed[col] = pd.to_numeric(df_transposed[col].str.replace(',', ''), errors='coerce')
-        
-        # Fill NaN values with 0
-        df_transposed = df_transposed.fillna(0)
-        
-        # Display the first few rows for verification
         print(df_transposed.head())
-        
-        # Save to CSV
         df_transposed.to_csv(file_path, index=False)
         print(f"Data successfully saved to CSV: {file_path}")
-        
-        return df_transposed  # Return the transposed DataFrame
+        return df_transposed  # Return the transposed DataFrame for further processing
     else:
         print("No data to save.")
         return None
 
-def load_to_postgres(df, engine, table_name):
-    """Load DataFrame into PostgreSQL."""
+def load_to_postgres(df_transposed, engine, table_name):
+    """Load transposed DataFrame into PostgreSQL."""
     try:
-        if df is not None:
-            # Convert all columns (except 'Date') to numeric
-            for col in df.columns:
-                if col != 'Date':
-                    df[col] = pd.to_numeric(df[col].str.replace(',', ''), errors='coerce')
-            
-            # Load to PostgreSQL
-            df.to_sql(table_name, con=engine, if_exists='replace', index=False)
-            print("Data successfully loaded into PostgreSQL.")
-        else:
-            print("No data to load into PostgreSQL.")
+        df_transposed.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        print("Data successfully loaded into PostgreSQL.")
     except Exception as e:
         print(f"Error loading data into PostgreSQL: {e}")
 
@@ -144,7 +120,7 @@ def main():
             df = parse_table(soup)
             if df is not None:
                 csv_file_path = "reliance_data2.csv"
-                df_transposed = save_to_csv(df, csv_file_path)  # Get the transposed DataFrame
+                df_transposed = save_to_csv(df, csv_file_path)
                 if df_transposed is not None:
                     load_to_postgres(df_transposed, engine, 'reliance_data2')
     else:
