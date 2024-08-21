@@ -67,7 +67,6 @@ def parse_table(soup):
         df = pd.DataFrame(row_data, columns=headers)
         if not df.empty:
             df.columns = ['Narration'] + df.columns[1:].tolist()
-            df.columns = df.columns.str.replace(' ', '_').str.replace('%', 'pct').str.replace('+', '_plus')
         df = df.reset_index(drop=True)
         return df
     else:
@@ -85,9 +84,9 @@ def save_to_csv(df, file_path):
         for col in df_transposed.columns:
             if col != 'Date':
                 # Remove commas and percentage symbols, then convert to numeric
-                df_transposed[col] = df_transposed[col].replace({',': '', 'pct': ''}, regex=True)
+                df_transposed[col] = df_transposed[col].replace({',': '', '%': ''}, regex=True)
                 df_transposed[col] = pd.to_numeric(df_transposed[col], errors='coerce')
-        
+
         print(df_transposed.head())
         df_transposed = df_transposed.fillna(0)
         df_transposed.to_csv(file_path, index=False)
@@ -110,12 +109,12 @@ def main():
     """Main function to execute the script."""
     username = os.getenv("USERNAME")
     password = os.getenv("PASSWORD")
-    
+
     # Create PostgreSQL engine
     engine = create_pg_engine()
     if not engine:
         return
-    
+
     # Fetch CSRF token and login
     session = requests.Session()
     login_url = "https://www.screener.in/login/?"
