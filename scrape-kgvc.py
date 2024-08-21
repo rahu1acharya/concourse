@@ -50,51 +50,48 @@ def fetch_data(session, search_url):
         return None
 
 def parse_table(soup):
-    """Parse the table from BeautifulSoup object and return DataFrame."""
+    """Parse the table from BeautifulSoup object and return DataFrame in the desired format."""
     table = soup.find('section', {'id': 'profit-loss'}).find('table')
     if table:
         # Extract headers
-        headers = [th.text.strip() for th in table.find_all('th') if th.text.strip()]
+        headers = [th.text.strip() for th in table.find_all('th')]
+
+        # Initialize data containers
+        data = {header: [] for header in headers[1:]}  # Excluding 'Narration'
 
         # Process rows
         rows = table.find_all('tr')
-        data = {header: [] for header in headers}
-
-        for row in rows:
+        for row in rows[1:]:  # Skip the header row
             cols = [col.text.strip() for col in row.find_all('td')]
             if cols:
-                # Assuming the first column is the label and the rest are the values
-                label = cols[0]
+                narration = cols[0]
                 values = cols[1:]
 
-                if len(values) == len(headers) - 1:
-                    data[label] = values
+                # Append data to the corresponding column
+                for i, value in enumerate(values):
+                    data[headers[i + 1]].append(value)
 
-        # Create DataFrame with transposed data
-        # Extract the dates
-        dates = headers[1:]
-        metrics = list(data.keys())
-
-        # Create the DataFrame
-        df_data = {'Date': dates}
-        for metric in metrics:
-            df_data[metric] = data[metric]
+        # Convert to DataFrame
+        df_data = {'Date': headers[1:]}  # Date headers
+        for key, values in data.items():
+            df_data[key] = values
 
         df = pd.DataFrame(df_data)
-
-        # Convert columns except 'Date' to numeric and remove symbols
+        df = df.rename(columns={'Date': 'Date'})
+        
+        # Convert columns to numeric and remove symbols
         for col in df.columns[1:]:
             df[col] = df[col].str.replace(r'[%,\'\"]', '', regex=True)  # Remove %, ', and "
             df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric
 
-        # Fill NaN values with appropriate default
-        df.fillna(0, inplace=True)
-
+        df.fillna('', inplace=True)  # Fill NaN values with empty strings
         df = df.reset_index(drop=True)
+
         return df
     else:
         print("Failed to find the data table.")
         return None
+
 
 def save_to_csv(df, file_path):
     """Save DataFrame to CSV file."""
