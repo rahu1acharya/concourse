@@ -72,7 +72,7 @@ def parse_table(soup):
             for col in df.columns[1:]:
                 df[col] = df[col].str.replace(r'[%,\'\"]', '', regex=True)  # Remove %, ', and "
                 df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric, setting invalid parsing as NaN
-
+            df.fillna(0, inplace=True)
         df = df.reset_index(drop=True)
         return df
     else:
