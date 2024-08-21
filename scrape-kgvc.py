@@ -76,11 +76,28 @@ def parse_table(soup):
 def save_to_csv(df, file_path):
     """Save transposed DataFrame to CSV file and return it."""
     if df is not None:
-        df_transposed = df.set_index('Narration').T  # Transpose the DataFrame
-        df_transposed.reset_index(inplace=True)
-        df_transposed.rename(columns={'index': 'Date'}, inplace=True)  # Rename index column to 'Date'
+        # Transpose the DataFrame
+        df_transposed = df.set_index('Narration').T
         
+        # Reset index and rename the index column to 'Date'
+        df_transposed.reset_index(inplace=True)
+        df_transposed.rename(columns={'index': 'Date'}, inplace=True)
+        
+        # Remove '+' sign from relevant columns
+        columns_with_plus = ['Sales +', 'Expenses +', 'Other Income +', 'Net Profit +']
+        for col in columns_with_plus:
+            if col in df_transposed.columns:
+                df_transposed[col] = df_transposed[col].replace({'\+': ''}, regex=True)
+        
+        # Convert all columns except 'Date' to numeric
+        for col in df_transposed.columns:
+            if col != 'Date':
+                df_transposed[col] = pd.to_numeric(df_transposed[col].str.replace(',', ''), errors='coerce')
+
+        # Display the first few rows for verification
         print(df_transposed.head())
+        
+        # Save to CSV
         df_transposed.to_csv(file_path, index=False)
         print(f"Data successfully saved to CSV: {file_path}")
         
@@ -88,8 +105,6 @@ def save_to_csv(df, file_path):
     else:
         print("No data to save.")
         return None
-
-
 
 def load_to_postgres(df, engine, table_name):
     """Load transposed DataFrame into PostgreSQL."""
