@@ -1,4 +1,5 @@
 #!/bin/sh
+chmod +x py-script/run-scrape.sh
 # Install dependencies from requirements.txt
 pip install -r py-script/requirements.txt
 
