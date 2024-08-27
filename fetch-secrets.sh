@@ -1,4 +1,6 @@
 #!/bin/sh
+
+chmod +x py-script/fetch-secrets.sh
 # Set Vault address and token
 VAULT_ADDR="http://192.168.56.1:8200"
 VAULT_TOKEN="rahul"
