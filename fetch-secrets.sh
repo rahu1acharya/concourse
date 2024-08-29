@@ -2,11 +2,11 @@
 
 chmod +x py-script/fetch-secrets.sh
 # Set Vault address and token
-VAULT_ADDR="http://192.168.56.1:8200"
-VAULT_TOKEN="rahul"
+# VAULT_ADDR="http://192.168.56.1:8200"
+# VAULT_TOKEN="rahul"
 
-export VAULT_ADDR
-export VAULT_TOKEN
+# export VAULT_ADDR
+# export VAULT_TOKEN
 
 username=$(vault kv get -field=username secret/info)
 password=$(vault kv get -field=password secret/info)
