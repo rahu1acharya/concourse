@@ -22,5 +22,5 @@ python comp-pl.py
 mv all_companies_profit_loss.csv ../scraped-data/
 
 # Print the contents of the CSV file
-echo "Contents of reliance_data2.csv in scraped-data directory:"
-cat ../scraped-data/reliance_data2.csv
+echo "Contents of all_companies_profit_loss.csv in scraped-data directory:"
+cat ../scraped-data/all_companies_profit_loss.csv
