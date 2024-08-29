@@ -95,7 +95,7 @@ def save_to_csv(df, file_path):
         #df_transposed.columns = [col.lower().replace(' ', '') for col in df_transposed.columns]
         df_transposed.rename(columns=lambda x: x.strip(), inplace=True)
  
-
+        print(1)
         print(df_transposed.head())
         df_transposed.to_csv(file_path, index=False)
         print(f"Data successfully saved to CSV: {file_path}")
