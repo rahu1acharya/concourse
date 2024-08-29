@@ -19,7 +19,7 @@ cd py-script
 python comp-pl.py
 
 # Move the output CSV file to the scraped-data directory
-mv reliance_data2.csv ../scraped-data/
+mv all_companies_profit_loss.csv ../scraped-data/
 
 # Print the contents of the CSV file
 echo "Contents of reliance_data2.csv in scraped-data directory:"
