@@ -1,12 +1,24 @@
 import os
 import pandas as pd
+from sqlalchemy import create_engine
 from bs4 import BeautifulSoup
 import requests
 
 def create_pg_engine():
     """Create a SQLAlchemy engine for PostgreSQL."""
-    # PostgreSQL part removed
-    return None
+    try:
+        pg_user = os.getenv('PG_USER', 'concourse_user')
+        pg_password = os.getenv('PG_PASSWORD', 'concourse_pass')
+        pg_host = '192.168.56.1'
+        pg_database = os.getenv('PG_DATABASE', 'concourse')
+        pg_port = os.getenv('PG_PORT', '5432')
+
+        engine = create_engine(f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_database}')
+        print("PostgreSQL engine created successfully.")
+        return engine
+    except Exception as e:
+        print(f"Error creating PostgreSQL engine: {e}")
+        return None
 
 def fetch_login_csrf_token(session, login_url):
     """Fetch CSRF token from the login page."""
@@ -61,7 +73,7 @@ def parse_table(soup):
         print("Failed to find the data table.")
         return None
 
-def save_to_csv(df, company_name, all_data_list):
+def save_to_transposed_csv(df, company_name, all_data_list):
     """Append transposed DataFrame to a list with company name."""
     if df is not None:
         df_transposed = df.set_index('Narration').T  # Transpose the DataFrame
@@ -87,16 +99,25 @@ def save_to_csv(df, company_name, all_data_list):
 
         all_data_list.append(df_transposed)  # Append DataFrame to the list
 
+def load_to_postgres(df_transposed, engine, table_name):
+    """Load transposed DataFrame into PostgreSQL."""
+    try:
+        df_transposed = df_transposed.fillna(0)
+        df_transposed.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        print("Data successfully loaded into PostgreSQL.")
+    except Exception as e:
+        print(f"Error loading data into PostgreSQL: {e}")
+
 def main():
     """Main function to execute the script."""
-    username = "rahul.acharya@godigitaltc.com"    #os.getenv("USERNAME")
-    password = "st0cksrahul@1"    #os.getenv("PASSWORD")
+    username = os.getenv("USERNAME")
+    password = os.getenv("PASSWORD")
 
     # List of companies to scrape
     companies = [
-            "HINDUNILVR", "ITC", "JYOTHYLAB", "BRITANNIA", "TATACONSUM",
-            "DABUR", "GODREJCP", "MARICO", "ZYDUSWELL", "EMAMILTD"
-        ]
+        "HINDUNILVR", "ITC", "JYOTHYLAB", "BRITANNIA", "TATACONSUM",
+        "DABUR", "GODREJCP", "MARICO", "ZYDUSWELL", "EMAMILTD"
+    ]
 
     all_data_list = []
 
@@ -114,13 +135,14 @@ def main():
             if soup:
                 df = parse_table(soup)
                 if df is not None:
-                    save_to_csv(df, company, all_data_list)
+                    save_to_transposed_csv(df, company, all_data_list)
     
-        # Concatenate all DataFrames and save to a single CSV file
+        # Concatenate all DataFrames and load into PostgreSQL
         if all_data_list:
             merged_df = pd.concat(all_data_list, ignore_index=True)
-            merged_df.to_csv("all_companies_profit_loss.csv", index=False)
-            print("All data successfully saved to CSV: all_companies_profit_loss.csv")
+            engine = create_pg_engine()
+            if engine:
+                load_to_postgres(merged_df, engine, 'ten_comp_pl')
     else:
         print("Login failed.")
 
