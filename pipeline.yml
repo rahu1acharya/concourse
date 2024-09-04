@@ -1,0 +1,93 @@
+resources:
+  - name: py-script
+    type: git
+    source:
+      uri: "https://github.com/rahu1acharya/concourse.git"
+      branch: main
+
+jobs:
+  - name: fetch-secrets
+    plan:
+      - get: py-script
+        trigger: true
+      - task: fetch-secrets-task
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: vault
+              tag: "1.13.3"
+          inputs:
+            - name: py-script
+          outputs:
+            - name: secrets-output
+          run:
+            path: sh
+            args:
+              - py-script/fetch-secrets.sh
+        params:
+          VAULT_ADDR: ((VAULT_ADDR))
+          VAULT_TOKEN: ((VAULT_TOKEN))
+      
+
+      - task: run-scrape-task
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: python
+              tag: "3.9"  
+          inputs:
+            - name: py-script
+            - name: secrets-output
+          outputs:
+            - name: scraped-data
+          run:
+            path: sh
+            args:
+              - py-script/run_comp-pl.sh
+
+
+  - name: parallel-balancesheet
+    plan:
+      - get: py-script
+        trigger: true
+      - task: fetch-secrets
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: vault
+              tag: "1.13.3"
+          inputs:
+            - name: py-script
+          outputs:
+            - name: secrets-output
+          run:
+            path: sh
+            args:
+              - py-script/fetch-secrets.sh
+        params:
+          VAULT_ADDR: ((VAULT_ADDR))
+          VAULT_TOKEN: ((VAULT_TOKEN))
+
+      - task: run-scrape-bs-task
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: python
+              tag: "3.9"  
+          inputs:
+            - name: py-script
+            - name: secrets-output
+          outputs:
+            - name: scraped-data-parallel
+          run:
+            path: sh
+            args:
+              - py-script/run_comp-bs.sh
