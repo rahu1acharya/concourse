@@ -1,5 +1,5 @@
 #!/bin/sh
-chmod +x py-script/run-scrape.sh
+chmod +x py-script/run_comp-bs.sh
 # Install dependencies from requirements.txt
 pip install -r py-script/requirements.txt
 
