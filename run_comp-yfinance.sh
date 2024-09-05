@@ -7,4 +7,4 @@ pip install -r py-script/yfrequirements.txt
 cd py-script
 
 # Run the scrape.py script
-python yfinanceapi.py
+python comp-yfinanceapi.py
