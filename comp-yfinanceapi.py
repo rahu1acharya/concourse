@@ -55,7 +55,7 @@ def main():
     
     # PostgreSQL database details
     db_details = {
-        'host': 'localhost',
+        'host': '192.168.56.1',
         'port': '5432',
         'dbname': 'concourse',
         'user': 'concourse_user',
