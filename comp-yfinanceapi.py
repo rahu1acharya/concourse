@@ -97,7 +97,7 @@ def fetch_ohlc_data(companies, start_year=2013, end_year=2024):
                     data = stock.history(start=start_str, end=end_date.strftime('%Y-%m-%d'))[['Open', 'High', 'Low', 'Close']]
                     
                     if not data.empty:
-                        data['Date'] = data.index.strftime('%b %d, %Y')
+                        data['Date'] = data.index.strftime('%b %Y')
                         data['Company'] = name
                         data['Year'] = year
                         all_data = pd.concat([all_data, data])
@@ -166,4 +166,5 @@ def main():
 # Run the process
 if __name__ == "__main__":
     main()
+
 
