@@ -8,7 +8,7 @@ def fetch_ohlc_data(companies, period="1mo"):
     
     for name, symbol in companies.items():
         stock = yf.Ticker(symbol)
-        data = stock.history(period=period)
+        data = stock.history(period=period)[['Open', 'High', 'Low', 'Close']]
         data['Company'] = name
         all_data = pd.concat([all_data, data])
     
